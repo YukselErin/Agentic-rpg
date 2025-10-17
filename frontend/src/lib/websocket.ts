@@ -8,7 +8,8 @@ export function connectWebSocket(clientId: string) {
         return;
     }
 
-    socket = new WebSocket(`ws://localhost:8000/ws/${clientId}`);
+    const websocketUrl = import.meta.env.VITE_WEBSOCKET_URL || `ws://localhost:8000`;
+    socket = new WebSocket(`${websocketUrl}/ws/${clientId}`);
 
     socket.onopen = () => {
         console.log('WebSocket connection opened');
