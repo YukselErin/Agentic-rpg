@@ -2,7 +2,7 @@ import { writable } from 'svelte/store';
 import type { GameState } from './types';
 
 const initial_state: GameState = {
-    grid: [],
+    world_objects: [],
     players: {},
     event_log: []
 };

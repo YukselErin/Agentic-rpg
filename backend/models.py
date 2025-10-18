@@ -14,17 +14,18 @@ class BodyParts(BaseModel):
 class Player(BaseModel):
     id: str
     name: str
-    position: tuple[int, int]
+    position: tuple[float, float]
     body_parts: BodyParts
     inventory: List[Item] = Field(default_factory=list)
 
-class Tile(BaseModel):
-    type: str
+class WorldObject(BaseModel):
+    id: str
+    name: str
+    position: tuple[float, float]
     svg: str
-    entities: List[Player] = Field(default_factory=list) # Simplified, could be a union of Player, NPC, etc.
 
 class GameState(BaseModel):
-    grid: List[List[Tile]]
+    world_objects: List[WorldObject]
     players: Dict[str, Player]
     event_log: List[str]
 

@@ -8,7 +8,11 @@ export function connectWebSocket(clientId: string) {
         return;
     }
 
-    const websocketUrl = import.meta.env.VITE_WEBSOCKET_URL || `ws://localhost:8000`;
+    let websocketUrl = import.meta.env.VITE_WEBSOCKET_URL || `ws://localhost:8000`;
+    if (websocketUrl.endsWith('/')) {
+        websocketUrl = websocketUrl.slice(0, -1);
+    }
+
     socket = new WebSocket(`${websocketUrl}/ws/${clientId}`);
 
     socket.onopen = () => {

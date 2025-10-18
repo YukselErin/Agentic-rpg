@@ -18,14 +18,15 @@ export interface Player {
     inventory: Item[];
 }
 
-export interface Tile {
-    type: string;
+export interface WorldObject {
+    id: string;
+    name: string;
+    position: [number, number];
     svg: string;
-    entities: Player[];
 }
 
 export interface GameState {
-    grid: Tile[][];
+    world_objects: WorldObject[];
     players: Record<string, Player>;
     event_log: string[];
 }

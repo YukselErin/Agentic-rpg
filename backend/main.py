@@ -2,8 +2,9 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict
 import json
+import random
 
-from models import GameState, Tile, Player, BodyParts, Item, PlayerCommand, WebSocketMessage
+from models import GameState, Player, BodyParts, Item, PlayerCommand, WebSocketMessage, WorldObject
 from agents.game_master import WorldStateManager, StorytellerAgent
 from agents.arbiter import ArbiterAgent
 from agents.personality import PersonalityAgent
@@ -29,7 +30,7 @@ app.add_middleware(
 
 # Agent and Game State Initialization
 game_state = GameState(
-    grid=[[]],
+    world_objects=[],
     players={},
     event_log=["Welcome to Agentic RPG!"]
 )
@@ -46,19 +47,25 @@ try:
         PersonalityAgent("cautious and observant")
     ]
 
-    # Initialize grid with default tiles
-    def initialize_grid():
-        game_state.grid = [[Tile(type="grass", svg=svg_bard.get_svg("grass")) for _ in range(10)] for _ in range(10)]
+    def initialize_world():
+        for i in range(20): # Create 20 random world objects
+            game_state.world_objects.append(
+                WorldObject(
+                    id=f"tree_{i}",
+                    name="tree",
+                    position=(random.uniform(-500, 500), random.uniform(-500, 500)),
+                    svg=svg_bard.get_svg("tree")
+                )
+            )
 
-    initialize_grid()
+    initialize_world()
 except Exception as e:
-    print(f"Could not connect to Redis or initialize grid: {e}")
-    # If Redis isn't available, use a fallback for SVGs
+    print(f"Could not connect to Redis or initialize world: {e}")
     class FallbackSVGBard:
         def get_svg(self, asset_description: str) -> str:
             return f"<svg width='100' height='100'><text>{asset_description}</text></svg>"
     svg_bard = FallbackSVGBard()
-    initialize_grid()
+    initialize_world()
 
 class ConnectionManager:
     def __init__(self):
@@ -71,7 +78,7 @@ class ConnectionManager:
         game_state.players[client_id] = Player(
             id=client_id,
             name=player_name,
-            position=(0, 0),
+            position=(random.uniform(-100, 100), random.uniform(-100, 100)),
             body_parts=BodyParts(),
             inventory=[]
         )
@@ -92,6 +99,8 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 async def game_turn(player_id: str, player_command: PlayerCommand):
+    # This function will need to be updated to handle movement in a continuous space
+    # For now, we'll just broadcast the state
     # 1. Personalities generate intentions
     intentions = [p.generate_intention(game_state) for p in personalities]
     game_state.event_log.extend(intentions)
@@ -119,6 +128,17 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         while True:
             data = await websocket.receive_text()
             command = PlayerCommand.parse_raw(data)
+            # Simple movement for testing
+            player = game_state.players[client_id]
+            if command.command == "move_north":
+                player.position = (player.position[0], player.position[1] - 10)
+            elif command.command == "move_south":
+                player.position = (player.position[0], player.position[1] + 10)
+            elif command.command == "move_east":
+                player.position = (player.position[0] + 10, player.position[1])
+            elif command.command == "move_west":
+                player.position = (player.position[0] - 10, player.position[1])
+            
             game_state.event_log.append(f"{game_state.players[client_id].name} commanded: {command.command}")
             await game_turn(client_id, command)
     except WebSocketDisconnect:
